@@ -450,6 +450,8 @@ return [
     'user' => 'User',
     'password' => 'Password',
     'accepted' => 'accepted',
+    'approved' => 'Approved',
+    'rejected' => 'Rejected',
     'declined' => 'declined',
     'declined_date' => 'Date Declined',
     'declined_note' => 'Declined Notes',

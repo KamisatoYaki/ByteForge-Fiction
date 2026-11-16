@@ -318,6 +318,16 @@ class UserFactory extends Factory
         return $this->appendPermission(['maintenances.complete' => '1']);
     }
 
+    public function approvePurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.approve' => '1']);
+    }
+
+    public function denyApprovePurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.approve' => '-1']);
+    }
+
     public function deleteAssets()
     {
         return $this->appendPermission(['assets.delete' => '1']);
