@@ -544,7 +544,7 @@
                                  visual home. The @if guard OR's the two
                                  governing permissions so a user with either
                                  can see the parent. --}}
-                            @if (Gate::allows('view', \App\Models\Asset::class) || Gate::allows('index', \App\Models\MaintenanceType::class))
+                            @if (Gate::allows('view', \App\Models\Maintenance::class) || Gate::allows('index', \App\Models\MaintenanceType::class))
                                 <li class="treeview{{ (request()->is('maintenances*') || request()->is('maintenance-types*')) ? ' active' : '' }}">
                                     <a href="#">
                                         <x-icon type="maintenances" class="fa-fw"/>
@@ -552,7 +552,7 @@
                                         <x-icon type="angle-left" class="pull-right fa-fw"/>
                                     </a>
                                     <ul class="treeview-menu">
-                                        @can('view', \App\Models\Asset::class)
+                                        @can('view', \App\Models\Maintenance::class)
                                             <li{!! (request()->is('maintenances') ? ' class="active" aria-current="page"' : '') !!}>
                                             <a href="{{ route('maintenances.index') }}">
                                                 <x-icon type="circle" class="text-grey fa-fw"/>

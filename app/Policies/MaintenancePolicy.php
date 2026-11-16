@@ -2,117 +2,134 @@
 
 namespace App\Policies;
 
+use App\Helpers\MaintenanceAuthorization;
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\Maintenance;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 
 /**
  * Policy for Asset Maintenances.
  *
- * A user may view or create maintenances on an asset if they have permission
- * to edit that asset. All other standard CRUD operations fall back to the
- * assets.edit permission, consistent with the rest of the application.
+ * Prefers dedicated maintenances.* permissions (deny-aware) with a
+ * legacy assets.view / assets.edit fallback when the dedicated key is
+ * unset. Instance-level abilities also require FMCS access to the
+ * parent asset.
+ *
+ * Admin short-circuit mirrors SnipePermissionsPolicy / AssetPolicy so
+ * existing administrator behavior for maintenance records is preserved
+ * when controllers authorize Maintenance abilities. Superuser is
+ * handled globally in AuthServiceProvider::boot().
  */
 final class MaintenancePolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Superusers and admins are handled globally in AuthServiceProvider::boot().
-     * Company-scoping is enforced at the model level via CompanyableChildTrait.
-     */
+    public function before(User $user, string $ability, mixed $item = null): ?bool
+    {
+        if ($user->hasAccess('admin')) {
+            return true;
+        }
 
-    /**
-     * Determine whether the user can list maintenances.
-     * Requires asset edit permission (no specific asset to check against).
-     */
+        return null;
+    }
+
     public function index(User $user): bool
     {
-        return $user->hasAccess('assets.view');
+        return MaintenanceAuthorization::allowsView($user);
     }
 
-    /**
-     * Determine whether the user can view a specific maintenance record.
-     * Allowed if the user can edit the associated asset.
-     */
-    public function view(User $user, ?Maintenance $maintenance = null): bool
+    public function view(User $user, mixed $maintenance = null): bool
     {
-        if (is_null($maintenance)) {
-            return $user->hasAccess('assets.view');
+        if ($maintenance instanceof Maintenance) {
+            return $this->canAccessParentAsset($maintenance)
+                && MaintenanceAuthorization::allowsView($user);
         }
 
-        return Gate::allows('update', $maintenance->asset);
+        return MaintenanceAuthorization::allowsView($user);
     }
 
     /**
-     * Determine whether the user can create a maintenance record.
-     * When checking against the class (no instance), fall back to assets.edit.
-     * When an asset instance is provided via context, check update on that asset.
+     * @param  mixed  $asset  Optional parent Asset when authorizing create-on-asset
      */
-    public function create(User $user, ?Asset $asset = null): bool
+    public function create(User $user, mixed $asset = null): bool
     {
         if ($asset instanceof Asset) {
-            return Gate::allows('update', $asset);
+            if (! Company::isCurrentUserHasAccess($asset)) {
+                return false;
+            }
         }
 
-        return $user->hasAccess('assets.edit');
+        if ($asset instanceof Maintenance) {
+            return $this->canAccessParentAsset($asset)
+                && MaintenanceAuthorization::allowsCreate($user);
+        }
+
+        return MaintenanceAuthorization::allowsCreate($user);
     }
 
-    /**
-     * Determine whether the user can update a maintenance record.
-     * Allowed if the user can edit the associated asset.
-     */
-    public function update(User $user, Maintenance $maintenance): bool
+    public function update(User $user, mixed $maintenance = null): bool
     {
-        return Gate::allows('update', $maintenance->asset);
+        if ($maintenance instanceof Maintenance) {
+            return $this->canAccessParentAsset($maintenance)
+                && MaintenanceAuthorization::allowsEdit($user);
+        }
+
+        return MaintenanceAuthorization::allowsEdit($user);
     }
 
-    /**
-     * Determine whether the user can delete a maintenance record.
-     * Allowed if the user can edit the associated asset and the record is not soft-deleted.
-     */
-    public function delete(User $user, Maintenance $maintenance): bool
+    public function delete(User $user, mixed $maintenance = null): bool
     {
-        return empty($maintenance->deleted_at)
-            && Gate::allows('update', $maintenance->asset);
+        if ($maintenance instanceof Maintenance) {
+            return empty($maintenance->deleted_at)
+                && $this->canAccessParentAsset($maintenance)
+                && MaintenanceAuthorization::allowsDelete($user);
+        }
+
+        return MaintenanceAuthorization::allowsDelete($user);
     }
 
-    /**
-     * Determine whether the user can view files attached to a maintenance record.
-     * Allowed if the user can edit the associated asset.
-     */
+    public function complete(User $user, mixed $maintenance = null): bool
+    {
+        if ($maintenance instanceof Maintenance) {
+            return $this->canAccessParentAsset($maintenance)
+                && MaintenanceAuthorization::allowsComplete($user);
+        }
+
+        return MaintenanceAuthorization::allowsComplete($user);
+    }
+
     public function files(User $user, Maintenance $maintenance): bool
     {
-        return Gate::allows('update', $maintenance->asset);
+        return $this->canAccessParentAsset($maintenance)
+            && MaintenanceAuthorization::allowsEdit($user);
     }
 
-    /**
-     * Determine whether the user can upload or delete files attached to a
-     * maintenance record. Mirrors files() here because maintenance file
-     * management follows the same asset-edit gate for both read and write.
-     * MaintenancePolicy is standalone (does not extend SnipePermissionsPolicy)
-     * so the base class fallback for manageFiles does not apply.
-     */
     public function manageFiles(User $user, Maintenance $maintenance): bool
     {
-        return Gate::allows('update', $maintenance->asset);
+        return $this->canAccessParentAsset($maintenance)
+            && MaintenanceAuthorization::allowsEdit($user);
     }
 
-    /**
-     * Determine whether the user can view history for a maintenance record.
-     * Allowed when the user can view the maintenance itself, or has global activity view permission.
-     */
     public function history(User $user, Maintenance $maintenance): bool
     {
-        return Gate::allows('view', $maintenance->asset)
-            || Gate::allows('view', $maintenance)
+        return Gate::allows('view', $maintenance)
             || $user->hasAccess('activity.view');
     }
 
     public function journal(User $user, Maintenance $maintenance): bool
     {
-        return Gate::allows('view', $maintenance) || $user->hasAccess('activity.view');
+        return Gate::allows('view', $maintenance)
+            || $user->hasAccess('activity.view');
+    }
+
+    private function canAccessParentAsset(Maintenance $maintenance): bool
+    {
+        $asset = $maintenance->asset;
+
+        return $asset instanceof Model && Company::isCurrentUserHasAccess($asset);
     }
 }

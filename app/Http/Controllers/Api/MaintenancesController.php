@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\ActionType;
 use App\Helpers\Helper;
+use App\Helpers\MaintenanceAuthorization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FilterRequest;
 use App\Http\Requests\ImageUploadRequest;
@@ -40,7 +41,7 @@ class MaintenancesController extends Controller
      */
     public function index(FilterRequest $request): JsonResponse|array
     {
-        $this->authorize('view', Asset::class);
+        $this->authorize('view', Maintenance::class);
 
         $maintenances = Maintenance::select('maintenances.*')
             ->whereHas('asset')
@@ -221,7 +222,8 @@ class MaintenancesController extends Controller
      */
     public function store(ImageUploadRequest $request): JsonResponse|array
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('create', Maintenance::class);
+        $this->authorizeCompletionStateChangeFromRequest($request, null);
 
         $isBulk = $request->has('asset_ids');
         $assetIds = $isBulk
@@ -240,6 +242,7 @@ class MaintenancesController extends Controller
                 continue;
             }
 
+            // Per-asset FMCS — never trust client-supplied asset IDs alone.
             if (! Company::isCurrentUserHasAccess($asset)) {
                 $errors[] = trans('general.action_permission_denied', ['item_type' => trans('general.asset'), 'id' => $assetId, 'action' => trans('general.create')]);
 
@@ -247,9 +250,14 @@ class MaintenancesController extends Controller
             }
 
             $maintenance = new Maintenance;
-            $maintenance->fill($request->except(['asset_id', 'asset_ids']));
+            // Never trust client-supplied completed_by (CWE-915). Stamp the
+            // authenticated actor only when the create payload completes the row.
+            $maintenance->fill($request->except(['asset_id', 'asset_ids', 'completed_by']));
             $maintenance->asset_id = $assetId;
             $maintenance->created_by = auth()->id();
+            if ($maintenance->completed_at !== null) {
+                $maintenance->completed_by = auth()->id();
+            }
             $request->handleImages($maintenance);
 
             if ($maintenance->save()) {
@@ -293,7 +301,7 @@ class MaintenancesController extends Controller
      */
     public function update(Request $request, $id): JsonResponse|array
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('update', Maintenance::class);
 
         if ($maintenance = Maintenance::with('asset')->find($id)) {
 
@@ -306,6 +314,9 @@ class MaintenancesController extends Controller
             if (! Company::isCurrentUserHasAccess($maintenance->asset)) {
                 return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.action_permission_denied', ['item_type' => trans('admin/maintenances/general.maintenance'), 'id' => $id, 'action' => trans('general.edit')])));
             }
+
+            $this->authorize('update', $maintenance);
+            $this->authorizeCompletionStateChangeFromRequest($request, $maintenance);
 
             // Re-parenting intent can arrive as the legacy `asset_id` alias
             // or as the polymorphic pair (`item_id` + `item_type`). Both are
@@ -337,10 +348,23 @@ class MaintenancesController extends Controller
                 }
             }
 
+            $wasCompleted = $maintenance->completed_at !== null;
+
             $maintenance->fill($request->except(['asset_id', 'item_id', 'item_type', 'completed_by']));
 
             if ($newAsset !== null) {
                 $maintenance->asset_id = $newAsset->id;
+            }
+
+            // Attribution is server-owned. Stamp the authenticated user only on
+            // an authorized incomplete → completed transition; never overwrite
+            // an existing completer on timestamp corrections or ordinary edits.
+            // Clearing completed_at also clears completed_by.
+            $isCompleted = $maintenance->completed_at !== null;
+            if (! $wasCompleted && $isCompleted) {
+                $maintenance->completed_by = auth()->id();
+            } elseif ($wasCompleted && ! $isCompleted) {
+                $maintenance->completed_by = null;
             }
 
             if ($maintenance->save()) {
@@ -367,10 +391,16 @@ class MaintenancesController extends Controller
      */
     public function destroy($maintenanceId): JsonResponse|array
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('delete', Maintenance::class);
         // Check if the asset maintenance exists
 
-        $maintenance = Maintenance::findOrFail($maintenanceId);
+        $maintenance = Maintenance::with('asset')->findOrFail($maintenanceId);
+
+        if (! $maintenance->asset || ! Company::isCurrentUserHasAccess($maintenance->asset)) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.action_permission_denied', ['item_type' => trans('admin/maintenances/general.maintenance'), 'id' => $maintenanceId, 'action' => trans('general.delete')])));
+        }
+
+        $this->authorize('delete', $maintenance);
 
         $maintenance->delete();
 
@@ -391,11 +421,13 @@ class MaintenancesController extends Controller
      */
     public function show($maintenanceId): JsonResponse|array
     {
-        $this->authorize('view', Asset::class);
+        $this->authorize('view', Maintenance::class);
         $maintenance = Maintenance::findOrFail($maintenanceId);
         if (! Company::isCurrentUserHasAccess($maintenance->asset)) {
             return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot view a maintenance for that asset'));
         }
+
+        $this->authorize('view', $maintenance);
 
         return (new MaintenancesTransformer)->transformMaintenance($maintenance);
 
@@ -403,11 +435,13 @@ class MaintenancesController extends Controller
 
     public function complete(Request $request, Maintenance $maintenance): JsonResponse
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('complete', Maintenance::class);
 
         if (! Company::isCurrentUserHasAccess($maintenance->asset)) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.action_permission_denied', ['item_type' => trans('admin/maintenances/general.maintenance'), 'id' => $maintenance->id, 'action' => trans('admin/maintenances/form.mark_complete')])));
         }
+
+        $this->authorize('complete', $maintenance);
 
         if ($maintenance->completed_at) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/maintenances/form.already_complete')));
@@ -486,5 +520,47 @@ class MaintenancesController extends Controller
         }
 
         return response()->json(Helper::formatStandardApiResponse('error', null, 'Something went wrong'), 500);
+    }
+
+    /**
+     * Require maintenances.complete (deny-aware / legacy assets.edit)
+     * before any create/update payload that would alter completion state.
+     * Partial API updates that omit completion keys are unaffected.
+     */
+    private function authorizeCompletionStateChangeFromRequest(Request $request, ?Maintenance $maintenance): void
+    {
+        $wouldAlter = false;
+
+        if ($request->exists('completed_at')) {
+            if (MaintenanceAuthorization::completedAtWouldChange(
+                $maintenance?->completed_at,
+                $request->input('completed_at')
+            )) {
+                $wouldAlter = true;
+            }
+        }
+
+        // completed_by is never client-writable on store/update; ignore it for
+        // authorization. Duration remains a completion-metadata signal.
+        if ($request->exists('asset_maintenance_time')) {
+            if (MaintenanceAuthorization::completionMetadataWouldChange(
+                $maintenance?->asset_maintenance_time,
+                $request->input('asset_maintenance_time')
+            )) {
+                $wouldAlter = true;
+            }
+        }
+
+        if (! $wouldAlter) {
+            return;
+        }
+
+        if ($maintenance instanceof Maintenance) {
+            $this->authorize('complete', $maintenance);
+
+            return;
+        }
+
+        $this->authorize('complete', Maintenance::class);
     }
 }

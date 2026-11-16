@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ActionType;
 use App\Helpers\Helper;
+use App\Helpers\MaintenanceAuthorization;
 use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Actionlog;
@@ -30,7 +31,7 @@ class MaintenancesController extends Controller
      */
     public function index(): View
     {
-        $this->authorize('view', Asset::class);
+        $this->authorize('view', Maintenance::class);
 
         // Normalize array-shaped query probes (?completed[$ptt]=true)
         // on the request itself so every downstream read in the blade
@@ -58,10 +59,15 @@ class MaintenancesController extends Controller
      */
     public function create(): View
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('create', Maintenance::class);
         $asset = null;
 
         if ($asset = Asset::find(request('asset_id'))) {
+            // Parent-asset FMCS check — Gate would resolve AssetPolicy if we
+            // passed the Asset instance to authorize('create', $asset).
+            if (! Company::isCurrentUserHasAccess($asset)) {
+                abort(403);
+            }
             // We have to set this so that the correct property is set in the select2 ajax dropdown
             $asset->asset_id = $asset->id;
         }
@@ -86,8 +92,14 @@ class MaintenancesController extends Controller
      */
     public function store(ImageUploadRequest $request): RedirectResponse
     {
-        $this->authorize('update', Asset::class);
+        $this->authorize('create', Maintenance::class);
         $this->validateUploadedFiles($request);
+
+        $requestedCompletedAt = $request->filled('completed_at') ? $request->input('completed_at') : null;
+        // Creating an already-completed record is a completion-state write.
+        if (MaintenanceAuthorization::completedAtWouldChange(null, $requestedCompletedAt)) {
+            $this->authorize('complete', Maintenance::class);
+        }
 
         $assets = Asset::whereIn('id', $request->input('selected_assets'))->get();
 
@@ -127,7 +139,7 @@ class MaintenancesController extends Controller
             // row complete and stamps who did it plus how long it took.
             $shouldLogComplete = $this->applyCompletionState(
                 $maintenance,
-                $request->filled('completed_at') ? $request->input('completed_at') : null,
+                $requestedCompletedAt,
                 wasCompletedBefore: false,
             );
 
@@ -163,8 +175,7 @@ class MaintenancesController extends Controller
      */
     public function edit(Maintenance $maintenance): View|RedirectResponse
     {
-        $this->authorize('update', Asset::class);
-        $this->authorize('update', $maintenance->asset);
+        $this->authorize('update', $maintenance);
 
         // Capture the referring page (filtered index, asset-detail tab)
         // server-side so update() can restore the caller's context via
@@ -198,8 +209,7 @@ class MaintenancesController extends Controller
      */
     public function update(ImageUploadRequest $request, Maintenance $maintenance): View|RedirectResponse
     {
-        $this->authorize('update', Asset::class);
-        $this->authorize('update', $maintenance->asset);
+        $this->authorize('update', $maintenance);
         $this->validateUploadedFiles($request);
 
         $maintenance->supplier_id = $request->input('supplier_id');
@@ -215,9 +225,16 @@ class MaintenancesController extends Controller
         $maintenance->url = $request->input('url');
         $request->handleImages($maintenance);
 
+        $requestedCompletedAt = $request->filled('completed_at') ? $request->input('completed_at') : null;
+        // Set, clear, or correct completed_at — all require complete ability.
+        // Ordinary edits that leave completion unchanged stay on update only.
+        if (MaintenanceAuthorization::completedAtWouldChange($maintenance->completed_at, $requestedCompletedAt)) {
+            $this->authorize('complete', $maintenance);
+        }
+
         $shouldLogComplete = $this->applyCompletionState(
             $maintenance,
-            $request->filled('completed_at') ? $request->input('completed_at') : null,
+            $requestedCompletedAt,
             wasCompletedBefore: $maintenance->completed_at !== null,
         );
 
@@ -352,7 +369,7 @@ class MaintenancesController extends Controller
      */
     public function complete(Request $request, Maintenance $maintenance): RedirectResponse
     {
-        $this->authorize('update', $maintenance->asset);
+        $this->authorize('complete', $maintenance);
 
         if ($maintenance->completed_at) {
             return redirect()->back()
@@ -388,8 +405,7 @@ class MaintenancesController extends Controller
      */
     public function destroy(Maintenance $maintenance): RedirectResponse
     {
-        $this->authorize('update', Asset::class);
-        $this->authorize('update', $maintenance->asset);
+        $this->authorize('delete', $maintenance);
         // Delete the asset maintenance
         $maintenance->delete();
 
@@ -409,7 +425,7 @@ class MaintenancesController extends Controller
      */
     public function show(Maintenance $maintenance): View|RedirectResponse
     {
-        $this->authorize('view', $maintenance->asset);
+        $this->authorize('view', $maintenance);
 
         return view('maintenances.view')->with('maintenance', $maintenance);
     }

@@ -10,7 +10,7 @@
 
 @aware(['name'])
 
-@can('view', \App\Models\Asset::class)
+@can('view', \App\Models\Maintenance::class)
 
     <x-slot:table_header>
         {{ $table_header }}

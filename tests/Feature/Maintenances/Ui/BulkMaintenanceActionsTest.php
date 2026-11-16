@@ -36,12 +36,12 @@ class BulkMaintenanceActionsTest extends TestCase
         $this->assertDatabaseHas('maintenances', ['id' => $keeper->id, 'deleted_at' => null]);
     }
 
-    public function test_bulk_endpoint_requires_asset_edit_permission()
+    public function test_bulk_endpoint_requires_maintenance_delete_permission()
     {
         $maintenance = Maintenance::factory()->create();
 
-        // Top-level authorize('update', Asset::class) in the controller
-        // blocks users without any assets.edit rights from even reaching
+        // Top-level authorize('delete', Maintenance::class) blocks users
+        // without dedicated or legacy delete rights from even reaching
         // the per-row policy checks — 403 rather than a "0 succeeded"
         // redirect.
         $this->actingAs(User::factory()->create())

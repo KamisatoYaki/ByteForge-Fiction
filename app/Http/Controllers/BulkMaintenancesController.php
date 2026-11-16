@@ -19,18 +19,18 @@ class BulkMaintenancesController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
-        // Top-level gate mirrors MaintenancesController::complete()/destroy(),
-        // because maintenance keys on the asset edit permission (see
-        // MaintenancePolicy). This blocks users without any assets.edit rights
-        // from hitting the endpoint at all; per-row policy still runs below.
-        // FMCS company scoping is applied automatically on the Maintenance
-        // lookups further down via the model's CompanyableChildTrait global
-        // scope, so a scoped user can't reach maintenance rows for assets
-        // outside their company set even if they submit those ids directly.
-        // We should probably consider making maintenances their own permission though
-        $this->authorize('update', Asset::class);
-
+        // Top-level gate uses dedicated maintenance abilities (with legacy
+        // assets.edit fallback via MaintenancePolicy). Per-row policy still
+        // runs below. FMCS company scoping is applied automatically on the
+        // Maintenance lookups via CompanyableChildTrait.
         $action = $request->input('bulk_actions');
+
+        if ($action === 'delete') {
+            $this->authorize('delete', Maintenance::class);
+        } elseif ($action === 'complete') {
+            $this->authorize('complete', Maintenance::class);
+        }
+
         $ids = array_values(array_unique(array_filter(array_map('intval', (array) $request->input('ids', [])))));
 
         // Prefer the Referer header (rather than a hidden form field,
@@ -88,7 +88,7 @@ class BulkMaintenancesController extends Controller
         $skipped = 0;
 
         Maintenance::whereIn('id', $ids)->whereNull('completed_at')->with('asset')->get()->each(function (Maintenance $maintenance) use (&$success, &$skipped) {
-            if (! auth()->user()->can('update', $maintenance)) {
+            if (! auth()->user()->can('complete', $maintenance)) {
                 $skipped++;
 
                 return;

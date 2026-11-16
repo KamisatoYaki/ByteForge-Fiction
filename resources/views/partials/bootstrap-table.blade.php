@@ -1489,7 +1489,7 @@
         },
         @endcan
 
-        @can('update', \App\Models\Asset::class)
+        @can('create', \App\Models\Maintenance::class)
         btnAddMaintenance: {
             text: '{{ trans('button.add_maintenance') }}',
             icon: 'fa-solid fa-screwdriver-wrench',
@@ -1877,9 +1877,10 @@
     });
     @endcan
 
-    @can('update', \App\Models\Asset::class)
-    // Custom Field table buttons
+    @can('view', \App\Models\Maintenance::class)
+    // Maintenance index / tab table buttons
     window.maintenanceButtons = () => ({
+        @can('create', \App\Models\Maintenance::class)
         btnAdd: {
             text: '{{ trans('general.create') }}',
             icon: 'fa fa-plus',
@@ -1894,6 +1895,7 @@
                 @endif
             }
         },
+        @endcan
         btnToggleCompleted: {
             text: '{{ request()->input('completed', 'false') === 'true' ? trans('admin/maintenances/general.show_active') : trans('admin/maintenances/general.show_completed') }}',
             icon: 'fa-regular fa-square-check',

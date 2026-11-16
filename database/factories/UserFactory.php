@@ -293,6 +293,31 @@ class UserFactory extends Factory
         return $this->appendPermission(['assets.edit' => '1']);
     }
 
+    public function viewMaintenances()
+    {
+        return $this->appendPermission(['maintenances.view' => '1']);
+    }
+
+    public function createMaintenances()
+    {
+        return $this->appendPermission(['maintenances.create' => '1']);
+    }
+
+    public function editMaintenances()
+    {
+        return $this->appendPermission(['maintenances.edit' => '1']);
+    }
+
+    public function deleteMaintenances()
+    {
+        return $this->appendPermission(['maintenances.delete' => '1']);
+    }
+
+    public function completeMaintenances()
+    {
+        return $this->appendPermission(['maintenances.complete' => '1']);
+    }
+
     public function deleteAssets()
     {
         return $this->appendPermission(['assets.delete' => '1']);

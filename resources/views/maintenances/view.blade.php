@@ -198,7 +198,7 @@
                         <x-button.edit :item="$maintenance" :route="route('maintenances.edit', $maintenance->id)" />
                         <x-button.note :item="$maintenance"/>
                         @if (! $maintenance->completed_at)
-                            @can('update', $maintenance->asset)
+                            @can('complete', $maintenance)
                                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#completeMaintenanceModal" data-tooltip="true" title="{{ trans('admin/maintenances/form.mark_complete') }}">
                                     <x-icon type="checkmark" class="fa-fw"/>
                                     <span class="sr-only">{{ trans('admin/maintenances/form.mark_complete') }}</span>
