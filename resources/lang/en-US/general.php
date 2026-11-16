@@ -452,6 +452,7 @@ return [
     'user' => 'User',
     'password' => 'Password',
     'accepted' => 'accepted',
+    'submitted' => 'submitted',
     'approved' => 'Approved',
     'rejected' => 'Rejected',
     'declined' => 'declined',

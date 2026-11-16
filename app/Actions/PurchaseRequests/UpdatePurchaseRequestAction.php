@@ -2,7 +2,9 @@
 
 namespace App\Actions\PurchaseRequests;
 
+use App\Enums\ActionType;
 use App\Exceptions\InvalidPurchaseRequestTransition;
+use App\Helpers\PurchaseRequestMoney;
 use App\Models\PurchaseRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +34,16 @@ class UpdatePurchaseRequestAction
                 );
             }
 
+            $locked->load('items');
+            $before = [
+                'title' => $locked->title,
+                'purpose' => $locked->purpose,
+                'department_id' => $locked->department_id,
+                'notes' => $locked->notes,
+                'estimated_total' => PurchaseRequestMoney::normalize($locked->estimated_total),
+                'items_count' => $locked->items->count(),
+            ];
+
             $departmentId = CreatePurchaseRequestAction::normalizeDepartmentId($data['department_id'] ?? null);
             CreatePurchaseRequestAction::assertDepartmentBelongsToCompany(
                 $departmentId,
@@ -54,7 +66,36 @@ class UpdatePurchaseRequestAction
 
             CreatePurchaseRequestAction::syncItems($locked, $items);
 
-            return $locked->fresh(['items', 'requester', 'company', 'department']);
+            $locked = $locked->fresh(['items', 'requester', 'company', 'department']);
+
+            $after = [
+                'title' => $locked->title,
+                'purpose' => $locked->purpose,
+                'department_id' => $locked->department_id,
+                'notes' => $locked->notes,
+                'estimated_total' => PurchaseRequestMoney::normalize($locked->estimated_total),
+                'items_count' => $locked->items->count(),
+            ];
+
+            $changed = [];
+            foreach ($after as $key => $newValue) {
+                if ((string) ($before[$key] ?? '') !== (string) $newValue) {
+                    $changed[$key] = [
+                        'old' => $before[$key],
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            RecordPurchaseRequestActivityAction::run(
+                $locked,
+                ActionType::Update,
+                auth()->user(),
+                note: $locked->request_number,
+                meta: $changed !== [] ? $changed : null,
+            );
+
+            return $locked;
         });
     }
 }

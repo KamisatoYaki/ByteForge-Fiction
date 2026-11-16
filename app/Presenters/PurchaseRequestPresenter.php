@@ -94,4 +94,13 @@ class PurchaseRequestPresenter extends Presenter
     {
         return (string) ($this->model->request_number.' — '.$this->model->title);
     }
+
+    public function nameUrl(): string
+    {
+        if (auth()->user()?->can('view', $this->model)) {
+            return '<a href="'.route('purchase-requests.show', $this->id).'">'.e($this->name()).'</a>';
+        }
+
+        return e($this->name());
+    }
 }

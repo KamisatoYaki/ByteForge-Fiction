@@ -41,6 +41,11 @@ enum ActionType: string
     // Maintenances
     case MaintenanceComplete = 'completed';
 
+    // Purchase Requests (ByteForge)
+    case Submitted = 'submitted';
+    case Approved = 'approved';
+    case Rejected = 'rejected';
+
     // File Uploads
     case Uploaded = 'uploaded';
     case UploadDeleted = 'upload deleted';

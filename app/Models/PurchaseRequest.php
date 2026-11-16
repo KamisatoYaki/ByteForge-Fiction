@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Actions\PurchaseRequests\RecordPurchaseRequestActivityAction;
 use App\Contracts\Approvable;
+use App\Enums\ActionType;
 use App\Enums\ApprovalDecision;
 use App\Enums\PurchaseRequestStatus;
 use App\Models\Traits\CompanyableTrait;
@@ -149,6 +151,26 @@ class PurchaseRequest extends SnipeModel implements Approvable
             ApprovalDecision::Rejected => PurchaseRequestStatus::Rejected,
         };
         $this->save();
+
+        // Dual-write into Actionlog inside the surrounding approval transaction.
+        // WorkflowApproval remains the authoritative decision history.
+        RecordPurchaseRequestActivityAction::run(
+            $this,
+            $decision === ApprovalDecision::Approved
+                ? ActionType::Approved
+                : ActionType::Rejected,
+            $decider,
+            note: $this->request_number,
+            meta: [
+                'request_number' => $this->request_number,
+                'decision' => $decision->value,
+            ],
+        );
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return (string) ($this->request_number.' — '.$this->title);
     }
 
     public function isDraft(): bool

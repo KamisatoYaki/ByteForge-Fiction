@@ -3035,6 +3035,12 @@
                 item_destination = 'maintenances'
                 item_icon = 'fa-solid fa-screwdriver-wrench';
             }
+            else if (value.type === 'purchaseRequest') {
+                // Actionlog::itemType() camelCases PurchaseRequest → purchaseRequest.
+                // Show route is purchase-requests/{id} (routes/web/purchase-requests.php).
+                item_destination = 'purchase-requests';
+                item_icon = 'fa-solid fa-bell-concierge';
+            }
             else if (value.type === 'model') {
                 item_destination = 'models'
                 item_icon = 'fa-solid fa-boxes-stacked';

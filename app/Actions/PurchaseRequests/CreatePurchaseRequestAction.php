@@ -2,6 +2,7 @@
 
 namespace App\Actions\PurchaseRequests;
 
+use App\Enums\ActionType;
 use App\Enums\PurchaseRequestStatus;
 use App\Helpers\PurchaseRequestMoney;
 use App\Models\Company;
@@ -59,7 +60,21 @@ class CreatePurchaseRequestAction
 
             self::syncItems($request, $items);
 
-            return $request->fresh(['items', 'requester', 'company', 'department']);
+            $request = $request->fresh(['items', 'requester', 'company', 'department']);
+
+            RecordPurchaseRequestActivityAction::run(
+                $request,
+                ActionType::Create,
+                $actor,
+                note: $request->request_number,
+                meta: [
+                    'request_number' => $request->request_number,
+                    'estimated_total' => (string) $request->estimated_total,
+                    'items_count' => $request->items->count(),
+                ],
+            );
+
+            return $request;
         });
     }
 

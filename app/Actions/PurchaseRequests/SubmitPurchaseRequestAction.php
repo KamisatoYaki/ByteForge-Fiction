@@ -2,6 +2,7 @@
 
 namespace App\Actions\PurchaseRequests;
 
+use App\Enums\ActionType;
 use App\Enums\PurchaseRequestStatus;
 use App\Exceptions\InvalidPurchaseRequestTransition;
 use App\Helpers\PurchaseRequestMoney;
@@ -76,7 +77,22 @@ class SubmitPurchaseRequestAction
                 );
             }
 
-            return $locked->fresh(['items', 'requester', 'company', 'department']);
+            $locked = $locked->fresh(['items', 'requester', 'company', 'department']);
+
+            RecordPurchaseRequestActivityAction::run(
+                $locked,
+                ActionType::Submitted,
+                auth()->user(),
+                note: $locked->request_number,
+                meta: [
+                    'request_number' => $locked->request_number,
+                    'estimated_total' => PurchaseRequestMoney::normalize($locked->estimated_total),
+                    'items_count' => $locked->items->count(),
+                    'submitted_at' => optional($locked->submitted_at)?->toDateTimeString(),
+                ],
+            );
+
+            return $locked;
         });
     }
 }

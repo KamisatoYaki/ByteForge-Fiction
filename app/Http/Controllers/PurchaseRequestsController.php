@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\PurchaseRequests\CreatePurchaseRequestAction;
+use App\Actions\PurchaseRequests\RecordPurchaseRequestActivityAction;
 use App\Actions\PurchaseRequests\SubmitPurchaseRequestAction;
 use App\Actions\PurchaseRequests\UpdatePurchaseRequestAction;
 use App\Actions\WorkflowApprovals\RecordWorkflowApprovalAction;
+use App\Enums\ActionType;
 use App\Enums\ApprovalDecision;
 use App\Exceptions\InvalidApprovalDecision;
 use App\Exceptions\InvalidPurchaseRequestTransition;
@@ -15,6 +17,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PurchaseRequestsController extends Controller
@@ -184,8 +187,22 @@ class PurchaseRequestsController extends Controller
                 ->with('error', trans('admin/purchase_requests/message.delete.not_draft'));
         }
 
-        $purchaseRequest->items()->delete();
-        $purchaseRequest->delete();
+        DB::transaction(function () use ($purchaseRequest) {
+            // Log while the Purchase Request row is still resolvable.
+            RecordPurchaseRequestActivityAction::run(
+                $purchaseRequest,
+                ActionType::Delete,
+                auth()->user(),
+                note: $purchaseRequest->request_number,
+                meta: [
+                    'request_number' => $purchaseRequest->request_number,
+                    'title' => $purchaseRequest->title,
+                ],
+            );
+
+            $purchaseRequest->items()->delete();
+            $purchaseRequest->delete();
+        });
 
         return redirect()
             ->route('purchase-requests.index')
