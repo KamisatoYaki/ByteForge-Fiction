@@ -348,6 +348,16 @@ class UserFactory extends Factory
         return $this->appendPermission(['purchase_requests.view' => '-1']);
     }
 
+    public function denyCreatePurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.create' => '-1']);
+    }
+
+    public function denyEditPurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.edit' => '-1']);
+    }
+
     public function deleteAssets()
     {
         return $this->appendPermission(['assets.delete' => '1']);
