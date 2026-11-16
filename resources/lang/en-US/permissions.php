@@ -454,6 +454,135 @@ return [
         'name' => 'Create Depreciation Records',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ByteForge Technologies Inc. — Phase 1 permission labels
+    |--------------------------------------------------------------------------
+    | Keys must match str_slug() of the dotted permission / section names used
+    | by resources/views/partials/forms/edit/permissions-base.blade.php.
+    | Underscores become hyphens (same pattern as selftwo-factor).
+    */
+
+    'procurement' => [
+        'name' => 'Procurement',
+        'note' => 'Grants access to purchase requests, purchase orders, and goods receipts. These permissions are unused until ByteForge procurement workflows are enabled.',
+    ],
+    'purchase-requestsview' => [
+        'name' => 'View Purchase Requests',
+        'note' => 'Allows the user to view purchase requests.',
+    ],
+    'purchase-requestscreate' => [
+        'name' => 'Create Purchase Requests',
+        'note' => 'Allows the user to create new purchase requests.',
+    ],
+    'purchase-requestsedit' => [
+        'name' => 'Edit Purchase Requests',
+        'note' => 'Allows the user to edit existing purchase requests.',
+    ],
+    'purchase-requestsapprove' => [
+        'name' => 'Approve Purchase Requests',
+        'note' => 'Allows the user to approve or reject purchase requests.',
+    ],
+    'purchase-ordersview' => [
+        'name' => 'View Purchase Orders',
+        'note' => 'Allows the user to view purchase orders.',
+    ],
+    'purchase-orderscreate' => [
+        'name' => 'Create Purchase Orders',
+        'note' => 'Allows the user to create new purchase orders.',
+    ],
+    'purchase-ordersedit' => [
+        'name' => 'Edit Purchase Orders',
+        'note' => 'Allows the user to edit existing purchase orders.',
+    ],
+    'purchase-ordersapprove' => [
+        'name' => 'Approve Purchase Orders',
+        'note' => 'Allows the user to approve or reject purchase orders.',
+    ],
+    'goods-receiptsview' => [
+        'name' => 'View Goods Receipts',
+        'note' => 'Allows the user to view goods receipts against purchase orders.',
+    ],
+    'goods-receiptscreate' => [
+        'name' => 'Create Goods Receipts',
+        'note' => 'Allows the user to record goods receipts.',
+    ],
+    'goods-receiptsedit' => [
+        'name' => 'Edit Goods Receipts',
+        'note' => 'Allows the user to edit existing goods receipts.',
+    ],
+
+    'asset-transfers' => [
+        'name' => 'Asset Transfers',
+        'note' => 'Grants access to inter-location asset transfer workflows. These permissions are unused until ByteForge transfer workflows are enabled.',
+    ],
+    'transfersview' => [
+        'name' => 'View Asset Transfers',
+        'note' => 'Allows the user to view asset transfer records.',
+    ],
+    'transferscreate' => [
+        'name' => 'Create Asset Transfers',
+        'note' => 'Allows the user to initiate asset transfers between locations.',
+    ],
+    'transfersapprove' => [
+        'name' => 'Approve Asset Transfers',
+        'note' => 'Allows the user to approve or reject asset transfer requests.',
+    ],
+    'transfersship' => [
+        'name' => 'Ship Asset Transfers',
+        'note' => 'Allows the user to mark approved transfers as shipped / in transit.',
+    ],
+    'transfersreceive' => [
+        'name' => 'Receive Asset Transfers',
+        'note' => 'Allows the user to confirm receipt of assets at the destination location.',
+    ],
+
+    'asset-disposal' => [
+        'name' => 'Asset Disposal',
+        'note' => 'Grants access to formal asset retirement and disposal workflows. These permissions are unused until ByteForge disposal workflows are enabled.',
+    ],
+    'disposalsview' => [
+        'name' => 'View Asset Disposals',
+        'note' => 'Allows the user to view asset disposal records.',
+    ],
+    'disposalscreate' => [
+        'name' => 'Create Asset Disposals',
+        'note' => 'Allows the user to request or initiate asset disposal.',
+    ],
+    'disposalsapprove' => [
+        'name' => 'Approve Asset Disposals',
+        'note' => 'Allows the user to approve or reject asset disposal requests.',
+    ],
+    'disposalscomplete' => [
+        'name' => 'Complete Asset Disposals',
+        'note' => 'Allows the user to complete disposal, including certification and final status updates.',
+    ],
+
+    'maintenances' => [
+        'name' => 'Maintenances',
+        'note' => 'Grants dedicated access to asset maintenance and repair records. Until maintenance policies are updated to use these keys, existing asset edit/view permissions may still control access.',
+    ],
+    'maintenancesview' => [
+        'name' => 'View Maintenances',
+        'note' => 'Allows the user to view maintenance and repair records.',
+    ],
+    'maintenancescreate' => [
+        'name' => 'Create Maintenances',
+        'note' => 'Allows the user to create maintenance and repair records.',
+    ],
+    'maintenancesedit' => [
+        'name' => 'Edit Maintenances',
+        'note' => 'Allows the user to edit maintenance and repair records.',
+    ],
+    'maintenancesdelete' => [
+        'name' => 'Delete Maintenances',
+        'note' => 'Allows the user to delete maintenance and repair records.',
+    ],
+    'maintenancescomplete' => [
+        'name' => 'Complete Maintenances',
+        'note' => 'Allows the user to mark maintenance and repair work as completed.',
+    ],
+
     'grant_all' => 'Grant all permissions for :area',
     'deny_all' => 'Deny all permissions for :area',
     'inherit_all' => 'Inherit all permissions for :area from permission groups',

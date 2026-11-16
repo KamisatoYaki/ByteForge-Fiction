@@ -134,4 +134,55 @@ class PermissionsFormPreCheckTest extends TestCase
         $this->assertRadioChecked($html, 'reports_allow', false, 'user edit with no reports permission set');
         $this->assertRadioChecked($html, 'reports_deny', false, 'user edit with no reports permission set');
     }
+
+    // -------------------------------------------------------------------
+    // ByteForge Phase 1 — new catalog sections appear on the permissions
+    // form. Radios use str_slug(permission) ids (e.g. purchase-requestsview).
+    // -------------------------------------------------------------------
+
+    public function test_group_edit_renders_byteforge_permission_sections()
+    {
+        $group = Group::factory()->create([
+            'permissions' => json_encode([]),
+        ]);
+
+        $html = $this->actingAs(User::factory()->superuser()->create())
+            ->get(route('groups.edit', $group))
+            ->assertOk()
+            ->getContent();
+
+        // Section heading ids come from str_slug of the first permission in
+        // each section (permissions-base.blade.php).
+        $this->assertStringContainsString('id="purchase-requestsview"', $html);
+        $this->assertStringContainsString('id="transfersview"', $html);
+        $this->assertStringContainsString('id="disposalsview"', $html);
+        $this->assertStringContainsString('id="maintenancesview"', $html);
+
+        // Representative ability radios for each new section.
+        $this->assertRadioChecked($html, 'purchase-requestsview_allow', false, 'group edit unset purchase_requests.view');
+        $this->assertRadioChecked($html, 'purchase-requestsapprove_allow', false, 'group edit unset purchase_requests.approve');
+        $this->assertRadioChecked($html, 'transfersreceive_allow', false, 'group edit unset transfers.receive');
+        $this->assertRadioChecked($html, 'disposalscomplete_allow', false, 'group edit unset disposals.complete');
+        $this->assertRadioChecked($html, 'maintenancescomplete_allow', false, 'group edit unset maintenances.complete');
+    }
+
+    public function test_group_edit_pre_checks_allow_when_byteforge_permission_is_granted()
+    {
+        $group = Group::factory()->create([
+            'permissions' => json_encode([
+                'transfers.approve' => '1',
+                'maintenances.view' => '1',
+            ]),
+        ]);
+
+        $html = $this->actingAs(User::factory()->superuser()->create())
+            ->get(route('groups.edit', $group))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertRadioChecked($html, 'transfersapprove_allow', true, 'group edit with transfers.approve = 1');
+        $this->assertRadioChecked($html, 'transfersapprove_deny', false, 'group edit with transfers.approve = 1');
+        $this->assertRadioChecked($html, 'maintenancesview_allow', true, 'group edit with maintenances.view = 1');
+        $this->assertRadioChecked($html, 'maintenancesview_deny', false, 'group edit with maintenances.view = 1');
+    }
 }

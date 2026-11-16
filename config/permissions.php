@@ -496,4 +496,124 @@ return [
 
     ],
 
+    /*
+     |--------------------------------------------------------------------------
+     | ByteForge Technologies Inc. — Phase 1 permission catalog extensions
+     |--------------------------------------------------------------------------
+     | Additive workflow permissions. Default-deny until granted on a user or
+     | permission group. No automatic grants; policies/workflows land later.
+     */
+
+    'Procurement' => [
+        [
+            'permission' => 'purchase_requests.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_requests.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_requests.edit',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_requests.approve',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_orders.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_orders.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_orders.edit',
+            'display' => true,
+        ],
+        [
+            'permission' => 'purchase_orders.approve',
+            'display' => true,
+        ],
+        [
+            'permission' => 'goods_receipts.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'goods_receipts.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'goods_receipts.edit',
+            'display' => true,
+        ],
+    ],
+
+    'Asset Transfers' => [
+        [
+            'permission' => 'transfers.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'transfers.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'transfers.approve',
+            'display' => true,
+        ],
+        [
+            'permission' => 'transfers.ship',
+            'display' => true,
+        ],
+        [
+            'permission' => 'transfers.receive',
+            'display' => true,
+        ],
+    ],
+
+    'Asset Disposal' => [
+        [
+            'permission' => 'disposals.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'disposals.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'disposals.approve',
+            'display' => true,
+        ],
+        [
+            'permission' => 'disposals.complete',
+            'display' => true,
+        ],
+    ],
+
+    'Maintenances' => [
+        [
+            'permission' => 'maintenances.view',
+            'display' => true,
+        ],
+        [
+            'permission' => 'maintenances.create',
+            'display' => true,
+        ],
+        [
+            'permission' => 'maintenances.edit',
+            'display' => true,
+        ],
+        [
+            'permission' => 'maintenances.delete',
+            'display' => true,
+        ],
+        [
+            'permission' => 'maintenances.complete',
+            'display' => true,
+        ],
+    ],
+
 ];
