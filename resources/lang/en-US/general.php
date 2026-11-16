@@ -291,6 +291,8 @@ return [
     'active_maintenances' => 'Active Maintenances',
     'maintenance_cost' => 'Maintenance Cost',
     'maintenance_complete' => 'Maintenance Complete',
+    'purchase_requests' => 'Purchase Requests',
+    'purchase_request' => 'Purchase Request',
     'manage_api_keys' => 'Manage API keys',
     'manufacturer' => 'Manufacturer',
     'manufacturers' => 'Manufacturers',

@@ -854,6 +854,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
     ); // end assets API routes
 
     /**
+     * ByteForge Purchase Requests — index only for bootstrap-table.
+     */
+    Route::get('purchase-requests', [
+        Api\PurchaseRequestsController::class, 'index',
+    ])->name('api.purchase-requests.index');
+
+    /**
      * Maintenance types API routes
      */
     Route::resource('maintenance-types',

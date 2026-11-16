@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'purchase_requests' => 'Purchase Requests',
+    'purchase_request' => 'Purchase Request',
+    'request_number' => 'Request Number',
+    'requester' => 'Requester',
+    'title' => 'Title',
+    'purpose' => 'Business Justification',
+    'add_line_item' => 'Add Line Item',
+    'estimated_total' => 'Estimated Total',
+    'unit_cost' => 'Estimated Unit Cost',
+    'line_total' => 'Line Total',
+    'item_description' => 'Item Description',
+    'specifications' => 'Specifications',
+    'line_items' => 'Line Items',
+    'approval_history' => 'Approval History',
+    'pending_approval' => 'Pending Approval',
+    'my_requests' => 'My Requests',
+    'status_draft' => 'Draft',
+    'status_submitted' => 'Submitted',
+    'submit_request' => 'Submit for Approval',
+    'approve_request' => 'Approve',
+    'reject_request' => 'Reject',
+    'decision_comments' => 'Approval Comments',
+    'submitted_at' => 'Submitted At',
+];

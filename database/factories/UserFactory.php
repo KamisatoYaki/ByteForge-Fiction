@@ -318,6 +318,21 @@ class UserFactory extends Factory
         return $this->appendPermission(['maintenances.complete' => '1']);
     }
 
+    public function viewPurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.view' => '1']);
+    }
+
+    public function createPurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.create' => '1']);
+    }
+
+    public function editPurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.edit' => '1']);
+    }
+
     public function approvePurchaseRequests()
     {
         return $this->appendPermission(['purchase_requests.approve' => '1']);
@@ -326,6 +341,11 @@ class UserFactory extends Factory
     public function denyApprovePurchaseRequests()
     {
         return $this->appendPermission(['purchase_requests.approve' => '-1']);
+    }
+
+    public function denyViewPurchaseRequests()
+    {
+        return $this->appendPermission(['purchase_requests.view' => '-1']);
     }
 
     public function deleteAssets()

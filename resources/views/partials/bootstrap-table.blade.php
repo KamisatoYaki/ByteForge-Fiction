@@ -2708,6 +2708,9 @@
         if (destination == 'maintenanceTypes') {
             destination = 'maintenance-types';
         }
+        if (destination == 'purchaseRequests') {
+            destination = 'purchase-requests';
+        }
         return function (value,row) {
 
             if ((row) && (row.tag_color) && (row.tag_color!='') && (row.tag_color!=undefined)) {
@@ -2900,6 +2903,10 @@
 
             if (dest == 'maintenanceTypes') {
                 dest = 'maintenance-types';
+            }
+
+            if (dest == 'purchaseRequests') {
+                dest = 'purchase-requests';
             }
 
 
@@ -3780,6 +3787,7 @@
         'maintenanceTypes',
         'manufacturers',
         'models',
+        'purchaseRequests',
         'statuslabels',
         'suppliers',
         'users',

@@ -544,6 +544,15 @@
                                  visual home. The @if guard OR's the two
                                  governing permissions so a user with either
                                  can see the parent. --}}
+                            @can('index', \App\Models\PurchaseRequest::class)
+                                <li{!! (request()->is('purchase-requests*') ? ' class="active" aria-current="page"' : '') !!}>
+                                    <a href="{{ route('purchase-requests.index') }}">
+                                        <x-icon type="requests" class="fa-fw"/>
+                                        <span>{{ trans('general.purchase_requests') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
+
                             @if (Gate::allows('view', \App\Models\Maintenance::class) || Gate::allows('index', \App\Models\MaintenanceType::class))
                                 <li class="treeview{{ (request()->is('maintenances*') || request()->is('maintenance-types*')) ? ' active' : '' }}">
                                     <a href="#">
