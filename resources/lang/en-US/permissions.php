@@ -465,7 +465,7 @@ return [
 
     'procurement' => [
         'name' => 'Procurement',
-        'note' => 'Grants access to purchase requests, purchase orders, and goods receipts. These permissions are unused until ByteForge procurement workflows are enabled.',
+        'note' => 'Grants access to purchase requests, purchase orders, and goods receipts. Purchase request permissions are used by the ByteForge Purchase Request workflow.',
     ],
     'purchase-requestsview' => [
         'name' => 'View Purchase Requests',
@@ -560,7 +560,7 @@ return [
 
     'maintenances' => [
         'name' => 'Maintenances',
-        'note' => 'Grants dedicated access to asset maintenance and repair records. Until maintenance policies are updated to use these keys, existing asset edit/view permissions may still control access.',
+        'note' => 'Grants dedicated access to asset maintenance and repair records. Dedicated maintenance permissions are enforced by the maintenance authorization policies.',
     ],
     'maintenancesview' => [
         'name' => 'View Maintenances',
