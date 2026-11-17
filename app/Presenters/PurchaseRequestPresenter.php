@@ -4,9 +4,12 @@ namespace App\Presenters;
 
 class PurchaseRequestPresenter extends Presenter
 {
-    public static function dataTableLayout(): array
+    /**
+     * JSON column layout for bootstrap-table (string, matching other presenters).
+     */
+    public static function dataTableLayout(): string
     {
-        return [
+        $layout = [
             [
                 'field' => 'id',
                 'searchable' => false,
@@ -88,6 +91,8 @@ class PurchaseRequestPresenter extends Presenter
                 'formatter' => 'purchaseRequestsActionsFormatter',
             ],
         ];
+
+        return json_encode($layout);
     }
 
     public function name(): string

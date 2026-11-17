@@ -17,12 +17,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\Rule;
 use Watson\Validating\ValidatingTrait;
 
 /**
  * ByteForge purchase request header. Implements Approvable for Task 3 approval.
  *
  * @property PurchaseRequestStatus $status
+ *
  * @mixin IdeHelperPurchaseRequest
  */
 class PurchaseRequest extends SnipeModel implements Approvable
@@ -65,6 +67,10 @@ class PurchaseRequest extends SnipeModel implements Approvable
     ];
 
     /**
+     * Static rules that do not depend on runtime Rule objects.
+     * `status` is composed in getRules() so Watson receives Rule::enum()
+     * (cast attributes are enum instances during validation).
+     *
      * @var array<string, string>
      */
     public $rules = [
@@ -76,9 +82,18 @@ class PurchaseRequest extends SnipeModel implements Approvable
         'company_id' => 'nullable|integer|exists:companies,id|fmcs_company',
         'requested_by' => 'required|integer|exists:users,id',
         'request_number' => 'required|string|max:32',
-        'status' => 'required|string|in:draft,submitted,approved,rejected',
         'estimated_total' => 'required|numeric|gte:0|max:99999999999999999.99',
     ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getRules(): array
+    {
+        return $this->rules + [
+            'status' => ['required', Rule::enum(PurchaseRequestStatus::class)],
+        ];
+    }
 
     protected $searchableAttributes = ['request_number', 'title', 'purpose', 'notes'];
 

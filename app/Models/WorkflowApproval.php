@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Validation\Rule;
 use LogicException;
 use Watson\Validating\ValidatingTrait;
 
@@ -18,6 +19,7 @@ use Watson\Validating\ValidatingTrait;
  * on that entity; this row records the decision actor, outcome, and time.
  *
  * @property ApprovalDecision $decision
+ *
  * @mixin IdeHelperWorkflowApproval
  */
 class WorkflowApproval extends Model
@@ -48,16 +50,29 @@ class WorkflowApproval extends Model
     ];
 
     /**
+     * Static rules that do not depend on runtime Rule objects.
+     * `decision` is composed in getRules() so Watson receives Rule::enum()
+     * (cast attributes are enum instances during validation).
+     *
      * @var array<string, string>
      */
     public $rules = [
         'approvable_type' => 'required|string',
         'approvable_id' => 'required|integer',
-        'decision' => 'required|string|in:approved,rejected',
         'decided_by' => 'required|integer',
         'decided_at' => 'required|date',
         'comments' => 'nullable|string',
     ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getRules(): array
+    {
+        return $this->rules + [
+            'decision' => ['required', Rule::enum(ApprovalDecision::class)],
+        ];
+    }
 
     protected static function booted(): void
     {
