@@ -132,8 +132,11 @@ class AuthServiceProvider extends ServiceProvider
          *
          * If this condition is true, ANYTHING else below will be assumed to be true.
          * This is where we set the superadmin permission to allow superadmins to be able to do everything within the system.
+         *
+         * Exception: Purchase Request update/submit/delete must reach PurchaseRequestPolicy
+         * so draft-only lifecycle rules apply to superusers the same way they do for admins.
          */
-        Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, $ability, $arguments = []) {
 
             // Disallow even superadmins to edit non-editable things when in demo mode.
             // (We have to do this to prevent jerks from trying to break the demo by editing things they shouldn't.)
@@ -141,6 +144,13 @@ class AuthServiceProvider extends ServiceProvider
                 return false;
             }
             if ($user->isSuperUser()) {
+                if (in_array($ability, ['update', 'submit', 'delete'], true)
+                    && isset($arguments[0])
+                    && $arguments[0] instanceof PurchaseRequest
+                ) {
+                    return null;
+                }
+
                 return true;
             }
         });
