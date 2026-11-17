@@ -143,9 +143,13 @@ class MaintenanceCompletedByMassAssignmentTest extends TestCase
         $originalCompleter = User::factory()->create();
         $maintenance = Maintenance::factory()->create([
             'name' => 'Already Done',
+            'start_date' => '2021-01-01 00:00:00',
             'completed_at' => '2021-01-10 00:00:00',
             'completed_by' => $originalCompleter->id,
         ]);
+
+        $this->assertTrue($maintenance->exists);
+        $this->assertNotNull($maintenance->id);
 
         $this->actingAsForApi($actor)
             ->putJson(route('api.maintenances.update', $maintenance), [
